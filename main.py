@@ -1,6 +1,26 @@
 from abc import ABC, abstractmethod
 
 
+class Course:
+    """A course offered on the learning platform."""
+
+    def __init__(self, course_id, title):
+        if not isinstance(course_id, str) or not course_id.strip():
+            raise ValueError("A course ID is required.")
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("A course title is required.")
+        self._course_id = course_id.strip()
+        self._title = title.strip()
+
+    @property
+    def course_id(self):
+        return self._course_id
+
+    @property
+    def title(self):
+        return self._title
+
+
 class User(ABC):
     def __init__(self, name, email, user_id):
         if not self.is_valid_email(email):
@@ -45,24 +65,32 @@ class Student(User):
 
     def __init__(self, name, email, user_id):
         super().__init__(name, email, user_id)
-        self._enrolled_courses = []
+        self._enrollments = []
 
     @property
     def enrolled_courses(self):
-        return tuple(self._enrolled_courses)
+        return tuple(enrollment.course for enrollment in self._enrollments)
+
+    @property
+    def enrollments(self):
+        return tuple(self._enrollments)
 
     def enroll_course(self, course):
         """Enroll the student in a course."""
-        self._enrolled_courses.append(course)
-        print(f"{self.name} enrolled in {course}.")
+        if not isinstance(course, Course):
+            raise TypeError("course must be a Course instance.")
+        enrollment = Enrollment(self, course)
+        self._enrollments.append(enrollment)
+        print(f"{self.name} enrolled in {course.title}.")
+        return enrollment
 
     def show_courses(self):
         """Display the student's enrolled courses."""
         print(f"{self.name}'s enrolled courses:")
 
-        if self._enrolled_courses:
-            for course in self._enrolled_courses:
-                print(f"- {course}")
+        if self._enrollments:
+            for enrollment in self._enrollments:
+                print(f"- {enrollment.course.title}")
         else:
             print("No courses enrolled.")
 
@@ -72,7 +100,27 @@ class Student(User):
         print(f"Name: {self.name}")
         print(f"Email: {self.email}")
         print(f"Student ID: {self.user_id}")
-        print(f"Courses enrolled: {len(self._enrolled_courses)}")
+        print(f"Courses enrolled: {len(self._enrollments)}")
+
+
+class Enrollment:
+    """The association between a student and a course."""
+
+    def __init__(self, student, course):
+        if not isinstance(student, Student):
+            raise TypeError("student must be a Student instance.")
+        if not isinstance(course, Course):
+            raise TypeError("course must be a Course instance.")
+        self._student = student
+        self._course = course
+
+    @property
+    def student(self):
+        return self._student
+
+    @property
+    def course(self):
+        return self._course
 
 
 class Mentor(User):
@@ -88,8 +136,10 @@ class Mentor(User):
 
     def create_course(self, course):
         """Create a new course."""
+        if not isinstance(course, Course):
+            raise TypeError("course must be a Course instance.")
         self._created_courses.append(course)
-        print(f"{self.name} created the course: {course}")
+        print(f"{self.name} created the course: {course.title}")
 
     def show_courses(self):
         """Display courses created by the mentor."""
@@ -97,7 +147,7 @@ class Mentor(User):
 
         if self._created_courses:
             for course in self._created_courses:
-                print(f"- {course}")
+                print(f"- {course.title}")
         else:
             print("No courses created.")
 
@@ -161,17 +211,19 @@ def main():
         "sarah@example.com",
         "A001"
     )
+    python_course = Course("C001", "Python Basics")
+    oop_course = Course("C002", "Object-Oriented Programming")
 
     # Student functionality
     print("=== STUDENT ===")
-    student.enroll_course("Python Basics")
-    student.enroll_course("Object-Oriented Programming")
+    student.enroll_course(python_course)
+    student.enroll_course(oop_course)
     student.show_courses()
 
     # Mentor functionality
     print("\n=== MENTOR ===")
-    mentor.create_course("Python Basics")
-    mentor.create_course("Object-Oriented Programming")
+    mentor.create_course(python_course)
+    mentor.create_course(oop_course)
     mentor.show_courses()
 
     # Admin functionality
