@@ -1,15 +1,43 @@
-    
-class User:
-    def __init__(self, name, email, user_id):
-        self.name = name
-        self.email = email
-        self.user_id = user_id
+from abc import ABC, abstractmethod
 
+
+class User(ABC):
+    def __init__(self, name, email, user_id):
+        if not self.is_valid_email(email):
+            raise ValueError("A valid email address is required.")
+        self._name = name
+        self._email = email
+        self._user_id = user_id
+
+    @staticmethod
+    def is_valid_email(email):
+        """Return whether an address has a basic valid email format."""
+        if not isinstance(email, str) or "@" not in email:
+            return False
+        local_part, domain = email.rsplit("@", 1)
+        return bool(local_part and "." in domain and not domain.startswith("."))
+
+    @classmethod
+    def from_data(cls, data):
+        """Create the concrete user type from a mapping of user fields."""
+        return cls(data["name"], data["email"], data["user_id"])
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def email(self):
+        return self._email
+
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @abstractmethod
     def show_profile(self):
-        """Display basic user information."""
-        print(f"User: {self.name}")
-        print(f"Email: {self.email}")
-        print(f"User ID: {self.user_id}")
+        """Display profile information for the concrete user type."""
+        raise NotImplementedError
 
 
 class Student(User):
@@ -17,19 +45,23 @@ class Student(User):
 
     def __init__(self, name, email, user_id):
         super().__init__(name, email, user_id)
-        self.enrolled_courses = []
+        self._enrolled_courses = []
+
+    @property
+    def enrolled_courses(self):
+        return tuple(self._enrolled_courses)
 
     def enroll_course(self, course):
         """Enroll the student in a course."""
-        self.enrolled_courses.append(course)
+        self._enrolled_courses.append(course)
         print(f"{self.name} enrolled in {course}.")
 
     def show_courses(self):
         """Display the student's enrolled courses."""
         print(f"{self.name}'s enrolled courses:")
 
-        if self.enrolled_courses:
-            for course in self.enrolled_courses:
+        if self._enrolled_courses:
+            for course in self._enrolled_courses:
                 print(f"- {course}")
         else:
             print("No courses enrolled.")
@@ -40,7 +72,7 @@ class Student(User):
         print(f"Name: {self.name}")
         print(f"Email: {self.email}")
         print(f"Student ID: {self.user_id}")
-        print(f"Courses enrolled: {len(self.enrolled_courses)}")
+        print(f"Courses enrolled: {len(self._enrolled_courses)}")
 
 
 class Mentor(User):
@@ -48,19 +80,23 @@ class Mentor(User):
 
     def __init__(self, name, email, user_id):
         super().__init__(name, email, user_id)
-        self.created_courses = []
+        self._created_courses = []
+
+    @property
+    def created_courses(self):
+        return tuple(self._created_courses)
 
     def create_course(self, course):
         """Create a new course."""
-        self.created_courses.append(course)
+        self._created_courses.append(course)
         print(f"{self.name} created the course: {course}")
 
     def show_courses(self):
         """Display courses created by the mentor."""
         print(f"{self.name}'s courses:")
 
-        if self.created_courses:
-            for course in self.created_courses:
+        if self._created_courses:
+            for course in self._created_courses:
                 print(f"- {course}")
         else:
             print("No courses created.")
@@ -71,7 +107,7 @@ class Mentor(User):
         print(f"Name: {self.name}")
         print(f"Email: {self.email}")
         print(f"Mentor ID: {self.user_id}")
-        print(f"Courses created: {len(self.created_courses)}")
+        print(f"Courses created: {len(self._created_courses)}")
 
 
 class Admin(User):
@@ -79,18 +115,22 @@ class Admin(User):
 
     def __init__(self, name, email, user_id):
         super().__init__(name, email, user_id)
-        self.users = []
+        self._users = []
+
+    @property
+    def users(self):
+        return tuple(self._users)
 
     def add_user(self, user):
         """Add a user to the platform."""
-        self.users.append(user)
+        self._users.append(user)
         print(f"{user.name} was added to the platform.")
 
     def show_users(self):
         """Display all users managed by the admin."""
         print("\nUsers on the platform:")
 
-        for user in self.users:
+        for user in self._users:
             print(f"- {user.name} ({user.__class__.__name__})")
 
     def show_profile(self):
@@ -99,16 +139,16 @@ class Admin(User):
         print(f"Name: {self.name}")
         print(f"Email: {self.email}")
         print(f"Admin ID: {self.user_id}")
-        print(f"Users managed: {len(self.users)}")
+        print(f"Users managed: {len(self._users)}")
 
 
 def main():
     # Create objects
-    student = Student(
-        "Alice",
-        "alice@example.com",
-        "S001"
-    )
+    student = Student.from_data({
+        "name": "Alice",
+        "email": "alice@example.com",
+        "user_id": "S001",
+    })
 
     mentor = Mentor(
         "John",
